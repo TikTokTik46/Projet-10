@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status, generics, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import BasePermission
 from django.http import Http404
@@ -119,6 +119,13 @@ class ContributorsViewSet(ModelViewSet):
         serializer.save(project_id=Projects.objects.get(pk=self.kwargs.get('project_id')), role= Contributors.CONTRIBUTOR)
         return Response(serializer.data)
 
+    def perform_destroy(self, instance):
+        if instance.role == 'CR':
+            raise serializers.ValidationError(
+                "Impossible de supprimer le créateur du projet"
+            )
+        instance.delete()
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["project_id"] = self.kwargs.get('project_id')
@@ -161,7 +168,7 @@ class CommentsViewSet(ModelViewSet):
         serializer.save(issue_id=
                         Issues.objects.get(pk=self.kwargs.get('issue_id')),
                         author_user_id=self.request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data)
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'update']:

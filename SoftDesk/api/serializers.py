@@ -1,9 +1,51 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from api.utils import convert_time
 
 
 from api.models import Contributors, Projects, Issues, Comments
+
+class ProjectMixin:
+    def get_project_id(self, obj):
+        return obj.id
+
+    def get_type(self, obj):
+        return obj.get_type_display()
+
+    def get_author_name(self, obj):
+        return obj.author_user_id.get_full_name()
+
+
+class IssueMixin:
+    def get_issue_id(self, obj):
+        return obj.id
+
+    def get_created_time(self, obj):
+        return convert_time(obj)
+
+    def get_tag(self, obj):
+        return obj.get_tag_display()
+
+    def get_status(self, obj):
+        return obj.get_status_display()
+
+    def get_priority(self, obj):
+        return obj.get_priority_display()
+
+    def get_author_name(self, obj):
+        return obj.author_user_id.get_full_name()
+
+class CommentMixin:
+    def get_comment_id(self, obj):
+        return obj.id
+
+    def get_created_time(self, obj):
+        return convert_time(obj)
+
+    def get_author_name(self, obj):
+        return obj.author_user_id.get_full_name()
+
 
 class UserSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -33,26 +75,17 @@ class UserSerializer(serializers.Serializer):
         return user
 
 
-class ProjectIdMixin:
-    def get_project_id(self, obj):
-        return obj.id
-
-
-class AuthorNameMixin:
-    def get_author_name(self, obj):
-        return obj.author_user_id.get_full_name()
-
-
-class ProjectsListSerializer(ModelSerializer, ProjectIdMixin, AuthorNameMixin):
+class ProjectsListSerializer(ModelSerializer, ProjectMixin):
     project_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
 
     class Meta:
         model = Projects
         fields = ['project_id', 'title', 'type', 'author_user_id', 'author_name']
 
 
-class ProjectsDetailSerializer(ModelSerializer, ProjectIdMixin,AuthorNameMixin):
+class ProjectsDetailSerializer(ModelSerializer, ProjectMixin):
     project_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
 
@@ -60,6 +93,14 @@ class ProjectsDetailSerializer(ModelSerializer, ProjectIdMixin,AuthorNameMixin):
         model = Projects
         fields = ['project_id', 'title', 'description', 'type', 'author_user_id', 'author_name']
         read_only_fields = ['project_id', 'author_user_id', 'author_name']
+
+    def to_internal_value(self, data):
+        # Permet de retourner une erreur personnalisée si la valeur de Type ne correspond pas aux choix possibles.
+        type_value = data.get('type', '')
+        if type_value not in dict(Projects.TYPES):
+            raise serializers.ValidationError({'type': ['Valeur non valide. Choisissez parmi les options suivantes : ' + str(dict(Projects.TYPES))]})
+
+        return super().to_internal_value(data)
 
 
 class ContributorsSerializer(ModelSerializer):
@@ -92,21 +133,19 @@ class ContributorsSerializer(ModelSerializer):
         return data
 
 
-class IssuesListSerializer(ModelSerializer):
+class IssuesListSerializer(ModelSerializer, IssueMixin):
     issue_id = serializers.SerializerMethodField()
     created_time = serializers.SerializerMethodField()
+    tag = serializers.SerializerMethodField()
+    priority = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Issues
         fields = ['issue_id', 'title', 'tag', 'priority', 'status', 'created_time']
 
-    def get_issue_id(self, obj):
-        return obj.id
 
-    def get_created_time(self, obj):
-        return obj.created_time.strftime("%d/%m/%Y %H:%M")
-
-class IssuesDetailSerializer(ModelSerializer, AuthorNameMixin):
+class IssuesDetailSerializer(ModelSerializer, IssueMixin):
     issue_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
     created_time = serializers.SerializerMethodField()
@@ -117,13 +156,39 @@ class IssuesDetailSerializer(ModelSerializer, AuthorNameMixin):
                   'status', 'author_user_id', 'author_name', 'created_time']
         read_only_fields = ['project_id', 'author_user_id']
 
-    def get_issue_id(self, obj):
-        return obj.id
+    def to_internal_value(self, data):
+        # Initialisation de la liste des erreurs
+        errors = {}
 
-    def get_created_time(self, obj):
-        return obj.created_time.strftime("%d/%m/%Y %H:%M")
+        # Vérification de la validité du tag
+        tag_value = data.get('tag', '')
+        if tag_value not in dict(Issues.TAGS):
+            errors['tag'] = [
+                'Valeur non valide. Choisissez parmi les options suivantes : ' + str(
+                    dict(Issues.TAGS))]
 
-class CommentsListSerializer(ModelSerializer):
+        # Vérification de la validité de la priorité
+        priority_value = data.get('priority', '')
+        if priority_value not in dict(Issues.PRIORITIES):
+            errors['priority'] = [
+                'Valeur non valide. Choisissez parmi les options suivantes : ' + str(
+                    dict(Issues.PRIORITIES))]
+
+        # Vérification de la validité de la priorité
+        status_value = data.get('status', '')
+        if status_value not in dict(Issues.STATUS):
+            errors['status'] = [
+                'Valeur non valide. Choisissez parmi les options suivantes : ' + str(
+                    dict(Issues.STATUS))]
+
+        # Lancement de l'exception s'il y a des erreurs
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        # Si tout est ok, retourne les données vérifiées
+        return super().to_internal_value(data)
+
+class CommentsListSerializer(ModelSerializer, CommentMixin):
     comment_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -131,20 +196,13 @@ class CommentsListSerializer(ModelSerializer):
         fields = ['comment_id', 'description', 'author_user_id',
                   'issue_id']
 
-    def get_comment_id(self, obj):
-        return obj.id
 
-
-class CommentsDetailSerializer(ModelSerializer, AuthorNameMixin):
+class CommentsDetailSerializer(ModelSerializer, CommentMixin):
     comment_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Comments
-        fields = ['comment_id', 'description', 'author_user_id', 'author_name'
+        fields = ['comment_id', 'description', 'author_user_id', 'author_name',
                   'issue_id', 'created_time']
-        read_only_fields = ['comment_id', 'author_user_id', 'issue_id']
-
-
-    def get_comment_id(self, obj):
-        return obj.id
+        read_only_fields = ['comment_id', 'author_user_id', 'issue_id', 'author_name']
