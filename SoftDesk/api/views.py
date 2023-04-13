@@ -82,7 +82,7 @@ class ProjectsViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         contributors = Contributors.objects.filter(user_id=user)
-        # Création d'une liste de projets correspondant à ces objets Contributors
+        # Création d'une liste de projets correspondant aux objets Contributors
         projects = [contributor.project_id for contributor in contributors]
         # Utilisation de cette liste pour récupérer les projets correspondants
         queryset = Projects.objects.filter(
@@ -91,7 +91,7 @@ class ProjectsViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'update']:
-            # Utiliser le serializer de détail pour la création
+            # Utiliser le serializer de détail pour la création, la mise à jour et la vue de detail.
             return self.detail_serializer_class
         return super().get_serializer_class()
 

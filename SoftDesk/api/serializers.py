@@ -1,28 +1,28 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from api.utils import convert_time
+from api.utils import display_time, display_name, display_id, choice_fields_validator
 
 
 from api.models import Contributors, Projects, Issues, Comments
 
 class ProjectMixin:
     def get_project_id(self, obj):
-        return obj.id
+        return display_id(obj)
 
     def get_type(self, obj):
         return obj.get_type_display()
 
     def get_author_name(self, obj):
-        return obj.author_user_id.get_full_name()
+        return display_name(obj.author_user_id)
 
 
 class IssueMixin:
     def get_issue_id(self, obj):
-        return obj.id
+        return display_id(obj)
 
     def get_created_time(self, obj):
-        return convert_time(obj)
+        return display_time(obj)
 
     def get_tag(self, obj):
         return obj.get_tag_display()
@@ -34,17 +34,17 @@ class IssueMixin:
         return obj.get_priority_display()
 
     def get_author_name(self, obj):
-        return obj.author_user_id.get_full_name()
+        return display_name(obj.author_user_id)
 
 class CommentMixin:
     def get_comment_id(self, obj):
-        return obj.id
+        return display_id(obj)
 
     def get_created_time(self, obj):
-        return convert_time(obj)
+        return display_time(obj)
 
     def get_author_name(self, obj):
-        return obj.author_user_id.get_full_name()
+        return display_name(obj.author_user_id)
 
 
 class UserSerializer(serializers.Serializer):
@@ -95,11 +95,8 @@ class ProjectsDetailSerializer(ModelSerializer, ProjectMixin):
         read_only_fields = ['project_id', 'author_user_id', 'author_name']
 
     def to_internal_value(self, data):
-        # Permet de retourner une erreur personnalisée si la valeur de Type ne correspond pas aux choix possibles.
-        type_value = data.get('type', '')
-        if type_value not in dict(Projects.TYPES):
-            raise serializers.ValidationError({'type': ['Valeur non valide. Choisissez parmi les options suivantes : ' + str(dict(Projects.TYPES))]})
-
+        choice_fields = {'type': Projects.TYPES}
+        choice_fields_validator(data, choice_fields)
         return super().to_internal_value(data)
 
 
@@ -117,7 +114,7 @@ class ContributorsSerializer(ModelSerializer):
         return obj.id
 
     def get_user_name(self, obj):
-        return obj.user_id.get_full_name()
+        return display_name(obj.user_id)
 
     def get_role(self, obj):
         return obj.get_role_display()
@@ -157,35 +154,10 @@ class IssuesDetailSerializer(ModelSerializer, IssueMixin):
         read_only_fields = ['project_id', 'author_user_id']
 
     def to_internal_value(self, data):
-        # Initialisation de la liste des erreurs
-        errors = {}
-
-        # Vérification de la validité du tag
-        tag_value = data.get('tag', '')
-        if tag_value not in dict(Issues.TAGS):
-            errors['tag'] = [
-                'Valeur non valide. Choisissez parmi les options suivantes : ' + str(
-                    dict(Issues.TAGS))]
-
-        # Vérification de la validité de la priorité
-        priority_value = data.get('priority', '')
-        if priority_value not in dict(Issues.PRIORITIES):
-            errors['priority'] = [
-                'Valeur non valide. Choisissez parmi les options suivantes : ' + str(
-                    dict(Issues.PRIORITIES))]
-
-        # Vérification de la validité de la priorité
-        status_value = data.get('status', '')
-        if status_value not in dict(Issues.STATUS):
-            errors['status'] = [
-                'Valeur non valide. Choisissez parmi les options suivantes : ' + str(
-                    dict(Issues.STATUS))]
-
-        # Lancement de l'exception s'il y a des erreurs
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        # Si tout est ok, retourne les données vérifiées
+        choice_fields = {'tag': Issues.TAGS,
+                   'priority': Issues.PRIORITIES,
+                   'status': Issues.STATUS}
+        choice_fields_validator(data, choice_fields)
         return super().to_internal_value(data)
 
 class CommentsListSerializer(ModelSerializer, CommentMixin):
@@ -200,6 +172,7 @@ class CommentsListSerializer(ModelSerializer, CommentMixin):
 class CommentsDetailSerializer(ModelSerializer, CommentMixin):
     comment_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
+    created_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Comments
