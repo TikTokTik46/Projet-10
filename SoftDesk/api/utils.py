@@ -1,8 +1,11 @@
 from rest_framework import serializers
+from django.utils import timezone
 
-# Permet de convertir la date au format Jour/Mois/Année Heure:Minute
+# Permet de convertir la date en fonction de la timezone locale au format J/M/A H:M
 def display_time(obj):
-    return obj.created_time.strftime("%d/%m/%Y %H:%M")
+    # Renvoie l'heure locale
+    local_date = timezone.localtime(obj.created_time)
+    return local_date.strftime("%d/%m/%Y %H:%M")
 
 # Permet de retourner le nom de l'utilisateur
 def display_name(obj_user_field):

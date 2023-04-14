@@ -11,7 +11,7 @@ Elle permet aux utilisateurs connectés de créer divers projets, d'ajouter des 
 
 ## Utilisation
 
-La documentation de l'API se trouve à l'adresse suivante : `https://documenter.getpostman.com/view/24353229/2s93RXtBGK`  
+La documentation de l'API se trouve [ici](https://documenter.getpostman.com/view/24353229/2s93RXtBGK) !  
 Pour utiliser Issue Tracking System API, vous pouvez accéder à `http://localhost:8000/API` via votre navigateur web ou utiliser un logiciel permettant de créer des requêtes HTTP tel que [POSTMAN](https://www.postman.com/).  
 Vous pouvez également consulter le site d'administration en accédant à `http://localhost:8000/admin` et en utilisant le compte d'administrateur (admin) disposant des droits d'administration.
 
@@ -27,7 +27,7 @@ Vous pouvez créer un compte ou utiliser un compte de test ci-dessous.
 
 ## Contribuer
 
-Les contributions sont les bienvenues ! Pour contribuer à LitReview, veuillez ouvrir une issue ou une pull request sur GitHub.
+Les contributions sont les bienvenues ! Pour contribuer à Issue Tracking System API, veuillez ouvrir une issue ou une pull request sur GitHub.
 
 ## Licence
 
