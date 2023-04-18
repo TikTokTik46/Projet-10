@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 
 
-class Contributors(models.Model):
+class Contributor(models.Model):
 
     CREATOR = 'CR'
     CONTRIBUTOR = 'CO'
@@ -15,7 +15,7 @@ class Contributors(models.Model):
     user_id = models.ForeignKey(settings.AUTH_USER_MODEL,
                                 on_delete=models.CASCADE)
     project_id = models.ForeignKey(
-        'api.Projects', on_delete=models.CASCADE
+        'api.Project', on_delete=models.CASCADE
         , related_name="projects_contributors")
     role = models.CharField(max_length=2,
                                   choices=ROLES)
@@ -24,7 +24,7 @@ class Contributors(models.Model):
     def __str__(self):
         return f"Projet n° : {self.project_id.id} - Contributeur : {self.user_id.get_full_name()} - Role : {self.get_role_display()}"
 
-class Projects(models.Model):
+class Project(models.Model):
 
     BACK_END = 'BE'
     FRONT_END = 'FE'
@@ -47,7 +47,7 @@ class Projects(models.Model):
     def __str__(self):
         return f"Projet n° : {self.id} - Titre : {self.title}"
 
-class Issues(models.Model):
+class Issue(models.Model):
 
     FAIBLE = 'FA'
     MOYENNE = 'MO'
@@ -83,22 +83,27 @@ class Issues(models.Model):
     description = models.CharField(max_length=255)
     tag = models.CharField(max_length=2, choices=TAGS)
     priority = models.CharField(max_length=2, choices=PRIORITIES)
-    project_id = models.ForeignKey('api.Projects', null=True,
+    project_id = models.ForeignKey('api.Project', null=True,
                                    on_delete=models.CASCADE,
                                    related_name='project_issues')
     status = models.CharField(max_length=2, choices=STATUS)
     author_user_id = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                       on_delete=models.CASCADE)
+                                       on_delete=models.CASCADE,
+                                       related_name='authored_issues'
+                                       )
     created_time = models.DateTimeField(auto_now_add=True)
+    assigned = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                       on_delete=models.CASCADE,
+                                related_name='assigned_issues')
 
     def __str__(self):
         return f"Projet n° : {self.project_id.id} - Titre du probléme : {self.title}"
 
-class Comments(models.Model):
+class Comment(models.Model):
     description = models.CharField(max_length=255)
     author_user_id = models.ForeignKey(settings.AUTH_USER_MODEL,
                                        on_delete=models.CASCADE)
-    issue_id = models.ForeignKey('api.Issues', null=True,
+    issue_id = models.ForeignKey('api.Issue', null=True,
                                  on_delete=models.CASCADE,
                                  related_name='issue_comments')
     created_time = models.DateTimeField(auto_now_add=True)

@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from api.utils import display_time, display_name, display_id, choice_fields_validator
 
 
-from api.models import Contributors, Projects, Issues, Comments
+from api.models import Contributor, Project, Issue, Comment
 
 class ProjectMixin:
     def get_project_id(self, obj):
@@ -35,6 +35,9 @@ class IssueMixin:
 
     def get_author_name(self, obj):
         return display_name(obj.author_user_id)
+
+    def get_assigned_name(self, obj):
+        return display_name(obj.assigned)
 
 class CommentMixin:
     def get_comment_id(self, obj):
@@ -81,7 +84,7 @@ class ProjectsListSerializer(ModelSerializer, ProjectMixin):
     type = serializers.SerializerMethodField()
 
     class Meta:
-        model = Projects
+        model = Project
         fields = ['project_id', 'title', 'type', 'author_user_id', 'author_name']
 
 
@@ -90,12 +93,12 @@ class ProjectsDetailSerializer(ModelSerializer, ProjectMixin):
     author_name = serializers.SerializerMethodField()
 
     class Meta:
-        model = Projects
+        model = Project
         fields = ['project_id', 'title', 'description', 'type', 'author_user_id', 'author_name']
         read_only_fields = ['project_id', 'author_user_id', 'author_name']
 
     def to_internal_value(self, data):
-        choice_fields = {'type': Projects.TYPES}
+        choice_fields = {'type': Project.TYPES}
         choice_fields_validator(data, choice_fields)
         return super().to_internal_value(data)
 
@@ -106,7 +109,7 @@ class ContributorsSerializer(ModelSerializer):
     role = serializers.SerializerMethodField()
 
     class Meta:
-        model = Contributors
+        model = Contributor
         fields = ['contributor_id', 'user_id', 'user_name', 'role']
         read_only_fields = ['contributor_id','role', 'user_name']
 
@@ -122,7 +125,7 @@ class ContributorsSerializer(ModelSerializer):
     def validate_user_id(self, data):
         # data correspond aux donnés qui doivent être validés, ici user_id
         project_id = self.context['request'].parser_context['kwargs'].get('project_id')
-        if Contributors.objects.filter(
+        if Contributor.objects.filter(
                 project_id=project_id, user_id=data).exists():
             raise serializers.ValidationError(
                 "User déjà présent dans les contributeurs"
@@ -136,27 +139,29 @@ class IssuesListSerializer(ModelSerializer, IssueMixin):
     tag = serializers.SerializerMethodField()
     priority = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    assigned_name = serializers.SerializerMethodField()
 
     class Meta:
-        model = Issues
-        fields = ['issue_id', 'title', 'tag', 'priority', 'status', 'created_time']
+        model = Issue
+        fields = ['issue_id', 'title', 'tag', 'priority', 'status', 'created_time','assigned_name']
 
 
 class IssuesDetailSerializer(ModelSerializer, IssueMixin):
     issue_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
     created_time = serializers.SerializerMethodField()
+    assigned_name = serializers.SerializerMethodField()
 
     class Meta:
-        model = Issues
+        model = Issue
         fields = ['issue_id', 'title', 'description', 'tag', 'priority', 'project_id',
-                  'status', 'author_user_id', 'author_name', 'created_time']
+                  'status', 'author_user_id', 'author_name', 'created_time','assigned','assigned_name']
         read_only_fields = ['project_id', 'author_user_id']
 
     def to_internal_value(self, data):
-        choice_fields = {'tag': Issues.TAGS,
-                   'priority': Issues.PRIORITIES,
-                   'status': Issues.STATUS}
+        choice_fields = {'tag': Issue.TAGS,
+                   'priority': Issue.PRIORITIES,
+                   'status': Issue.STATUS}
         choice_fields_validator(data, choice_fields)
         return super().to_internal_value(data)
 
@@ -164,7 +169,7 @@ class CommentsListSerializer(ModelSerializer, CommentMixin):
     comment_id = serializers.SerializerMethodField()
 
     class Meta:
-        model = Comments
+        model = Comment
         fields = ['comment_id', 'description', 'author_user_id',
                   'issue_id']
 
@@ -175,7 +180,7 @@ class CommentsDetailSerializer(ModelSerializer, CommentMixin):
     created_time = serializers.SerializerMethodField()
 
     class Meta:
-        model = Comments
+        model = Comment
         fields = ['comment_id', 'description', 'author_user_id', 'author_name',
                   'issue_id', 'created_time']
         read_only_fields = ['comment_id', 'author_user_id', 'issue_id', 'author_name']

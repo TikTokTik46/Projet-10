@@ -1,13 +1,12 @@
-from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import BasePermission
-from django.http import Http404
 
-from api.models import Projects, Contributors, Issues, Comments
+
+from api.models import Project, Contributor, Issue, Comment
 from api.serializers import (
     ProjectsListSerializer,
     ProjectsDetailSerializer,
@@ -25,7 +24,7 @@ class IsProjectOwnerOrContributor(BasePermission):
 
             user_id = request.user
             project_id = view.kwargs.get('project_id')
-            contributor = Contributors.objects.filter(user_id=user_id,
+            contributor = Contributor.objects.filter(user_id=user_id,
                                                       project_id=project_id)
             if contributor.exists():
                 if request.method in ['GET', 'HEAD', 'OPTIONS']:
@@ -54,7 +53,7 @@ class IsProjectContributor(BasePermission):
 
         user_id = request.user
         project_id = view.kwargs.get('project_id')
-        contributor = Contributors.objects.filter(user_id=user_id,
+        contributor = Contributor.objects.filter(user_id=user_id,
                                        project_id=project_id)
         if contributor.exists():
             return True
@@ -81,11 +80,11 @@ class ProjectsViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        contributors = Contributors.objects.filter(user_id=user)
+        contributors = Contributor.objects.filter(user_id=user)
         # Création d'une liste de projets correspondant aux objets Contributors
         projects = [contributor.project_id for contributor in contributors]
         # Utilisation de cette liste pour récupérer les projets correspondants
-        queryset = Projects.objects.filter(
+        queryset = Project.objects.filter(
             id__in=[project.id for project in projects])
         return queryset
 
@@ -100,7 +99,7 @@ class ProjectsViewSet(ModelViewSet):
         project = serializer.save(author_user_id=self.request.user)
 
         # Création d'un objet Contributors pour l'utilisateur courant
-        contributor = Contributors(user_id=self.request.user, project_id=project, role=Contributors.CREATOR)
+        contributor = Contributor(user_id=self.request.user, project_id=project, role=Contributor.CREATOR)
         contributor.save()
 
         return Response(serializer.data)
@@ -112,11 +111,11 @@ class ContributorsViewSet(ModelViewSet):
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
-        contributors = Contributors.objects.filter(project_id=project_id)
+        contributors = Contributor.objects.filter(project_id=project_id)
         return contributors
 
     def perform_create(self, serializer):
-        serializer.save(project_id=Projects.objects.get(pk=self.kwargs.get('project_id')), role= Contributors.CONTRIBUTOR)
+        serializer.save(project_id=Project.objects.get(pk=self.kwargs.get('project_id')), role=Contributor.CONTRIBUTOR)
         return Response(serializer.data)
 
     def perform_destroy(self, instance):
@@ -138,12 +137,12 @@ class IssuesViewSet(ModelViewSet):
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
-        issues = Issues.objects.filter(project_id=project_id)
+        issues = Issue.objects.filter(project_id=project_id)
         return issues
 
     def perform_create(self, serializer):
         serializer.save(project_id=
-                        Projects.objects.get(pk=self.kwargs.get('project_id')),
+                        Project.objects.get(pk=self.kwargs.get('project_id')),
                         author_user_id=self.request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -161,12 +160,12 @@ class CommentsViewSet(ModelViewSet):
 
     def get_queryset(self):
         issue_id = self.kwargs.get('issue_id')
-        comments = Comments.objects.filter(issue_id=issue_id)
+        comments = Comment.objects.filter(issue_id=issue_id)
         return comments
 
     def perform_create(self, serializer):
         serializer.save(issue_id=
-                        Issues.objects.get(pk=self.kwargs.get('issue_id')),
+                        Issue.objects.get(pk=self.kwargs.get('issue_id')),
                         author_user_id=self.request.user)
         return Response(serializer.data)
 
