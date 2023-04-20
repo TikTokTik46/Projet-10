@@ -90,6 +90,7 @@ class ProjectsListSerializer(ModelSerializer, ProjectMixin):
         model = Project
         fields = ['project_id', 'title', 'type', 'author_user_id',
                   'author_name']
+        read_only_field = ['author_name']
 
 
 class ProjectsDetailSerializer(ModelSerializer, ProjectMixin):
@@ -146,11 +147,12 @@ class IssuesListSerializer(ModelSerializer, IssueMixin):
     priority = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     assigned_name = serializers.SerializerMethodField()
+    author_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Issue
         fields = ['issue_id', 'title', 'tag', 'priority',
-                  'status', 'created_time','assigned_name']
+                  'status', 'created_time','author_name','assigned_name']
 
 
 class IssuesDetailSerializer(ModelSerializer, IssueMixin):
@@ -162,8 +164,9 @@ class IssuesDetailSerializer(ModelSerializer, IssueMixin):
     class Meta:
         model = Issue
         fields = ['issue_id', 'title', 'description', 'tag','priority',
-                  'project_id', 'status', 'author_user_id', 'author_name',
-                  'created_time','assigned','assigned_name']
+                  'project_id', 'status', 'author_user_id',
+                  'created_time','assigned','author_user_id', 'author_name',
+                  'assigned_name']
         read_only_fields = ['project_id', 'author_user_id']
 
     def to_internal_value(self, data):
@@ -175,11 +178,12 @@ class IssuesDetailSerializer(ModelSerializer, IssueMixin):
 
 class CommentsListSerializer(ModelSerializer, CommentMixin):
     comment_id = serializers.SerializerMethodField()
+    author_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['comment_id', 'description', 'author_user_id',
-                  'issue_id']
+        fields = ['comment_id', 'issue_id', 'description',
+                  'author_user_id', 'author_name']
 
 
 class CommentsDetailSerializer(ModelSerializer, CommentMixin):
@@ -189,7 +193,7 @@ class CommentsDetailSerializer(ModelSerializer, CommentMixin):
 
     class Meta:
         model = Comment
-        fields = ['comment_id', 'description', 'author_user_id', 'author_name',
-                  'issue_id', 'created_time']
+        fields = ['comment_id', 'issue_id', 'description',
+                  'author_user_id', 'author_name', 'created_time']
         read_only_fields = ['comment_id', 'author_user_id', 'issue_id',
                             'author_name']
