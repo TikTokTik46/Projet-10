@@ -1,10 +1,10 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from api.utils import display_time, display_name, display_id, choice_fields_validator
-
-
+from api.utils import display_time, display_name, \
+    display_id, choice_fields_validator
 from api.models import Contributor, Project, Issue, Comment
+
 
 class ProjectMixin:
     def get_project_id(self, obj):
@@ -53,18 +53,21 @@ class CommentMixin:
 class UserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, required=True)
-    password_confirmation = serializers.CharField(write_only=True, required=True)
+    password_confirmation = serializers.CharField(write_only=True,
+                                                  required=True)
     first_name = serializers.CharField()
     last_name = serializers.CharField()
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Un utilisateur avec cette adresse e-mail existe déjà.")
+            raise serializers.ValidationError(
+                "Un utilisateur avec cette adresse e-mail existe déjà.")
         return value
 
     def validate(self, data):
         if data['password'] != data['password_confirmation']:
-            raise serializers.ValidationError("Les mots de passe ne correspondent pas.")
+            raise serializers.ValidationError(
+                "Les mots de passe ne correspondent pas.")
         return data
 
     def create(self, validated_data):
@@ -85,7 +88,8 @@ class ProjectsListSerializer(ModelSerializer, ProjectMixin):
 
     class Meta:
         model = Project
-        fields = ['project_id', 'title', 'type', 'author_user_id', 'author_name']
+        fields = ['project_id', 'title', 'type', 'author_user_id',
+                  'author_name']
 
 
 class ProjectsDetailSerializer(ModelSerializer, ProjectMixin):
@@ -94,7 +98,8 @@ class ProjectsDetailSerializer(ModelSerializer, ProjectMixin):
 
     class Meta:
         model = Project
-        fields = ['project_id', 'title', 'description', 'type', 'author_user_id', 'author_name']
+        fields = ['project_id', 'title', 'description', 'type',
+                  'author_user_id', 'author_name']
         read_only_fields = ['project_id', 'author_user_id', 'author_name']
 
     def to_internal_value(self, data):
@@ -124,7 +129,8 @@ class ContributorsSerializer(ModelSerializer):
 
     def validate_user_id(self, data):
         # data correspond aux donnés qui doivent être validés, ici user_id
-        project_id = self.context['request'].parser_context['kwargs'].get('project_id')
+        project_id = self.context['request'].parser_context['kwargs'].get(
+            'project_id')
         if Contributor.objects.filter(
                 project_id=project_id, user_id=data).exists():
             raise serializers.ValidationError(
@@ -143,7 +149,8 @@ class IssuesListSerializer(ModelSerializer, IssueMixin):
 
     class Meta:
         model = Issue
-        fields = ['issue_id', 'title', 'tag', 'priority', 'status', 'created_time','assigned_name']
+        fields = ['issue_id', 'title', 'tag', 'priority',
+                  'status', 'created_time','assigned_name']
 
 
 class IssuesDetailSerializer(ModelSerializer, IssueMixin):
@@ -154,8 +161,9 @@ class IssuesDetailSerializer(ModelSerializer, IssueMixin):
 
     class Meta:
         model = Issue
-        fields = ['issue_id', 'title', 'description', 'tag', 'priority', 'project_id',
-                  'status', 'author_user_id', 'author_name', 'created_time','assigned','assigned_name']
+        fields = ['issue_id', 'title', 'description', 'tag','priority',
+                  'project_id', 'status', 'author_user_id', 'author_name',
+                  'created_time','assigned','assigned_name']
         read_only_fields = ['project_id', 'author_user_id']
 
     def to_internal_value(self, data):
@@ -183,4 +191,5 @@ class CommentsDetailSerializer(ModelSerializer, CommentMixin):
         model = Comment
         fields = ['comment_id', 'description', 'author_user_id', 'author_name',
                   'issue_id', 'created_time']
-        read_only_fields = ['comment_id', 'author_user_id', 'issue_id', 'author_name']
+        read_only_fields = ['comment_id', 'author_user_id', 'issue_id',
+                            'author_name']

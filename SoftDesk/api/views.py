@@ -2,7 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, serializers
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.permissions import BasePermission
 
 
@@ -35,7 +35,8 @@ class IsProjectOwnerOrContributor(BasePermission):
 
 class IsOwnerOrReadOnly(BasePermission):
     """
-    Permission pour n'autoriser que les créateurs de l'objet à le modifier ou le supprimer.
+    Permission pour n'autoriser que les créateurs de l'objet à le modifier ou
+     le supprimer.
     """
     def has_object_permission(self, request, view, obj):
         # Read permissions are allowed to any request,
@@ -62,6 +63,7 @@ class IsProjectContributor(BasePermission):
 
 class UserCreate(APIView):
     serializer_class = UserSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -90,12 +92,14 @@ class ProjectsViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'update']:
-            # Utiliser le serializer de détail pour la création, la mise à jour et la vue de detail.
+            # Utiliser le serializer de détail pour la création,
+            # la mise à jour et la vue de detail.
             return self.detail_serializer_class
         return super().get_serializer_class()
 
     def perform_create(self, serializer):
-        #Permet de créer un objet contributor lié au projet avec l'utilisateur comme créateur
+        #Permet de créer un objet contributor lié au projet avec
+        # l'utilisateur comme créateur
         project = serializer.save(author_user_id=self.request.user)
 
         # Création d'un objet Contributors pour l'utilisateur courant
@@ -115,7 +119,8 @@ class ContributorsViewSet(ModelViewSet):
         return contributors
 
     def perform_create(self, serializer):
-        serializer.save(project_id=Project.objects.get(pk=self.kwargs.get('project_id')), role=Contributor.CONTRIBUTOR)
+        serializer.save(project_id=Project.objects.get(pk=self.kwargs.get(
+            'project_id')), role=Contributor.CONTRIBUTOR)
         return Response(serializer.data)
 
     def perform_destroy(self, instance):
@@ -133,7 +138,8 @@ class ContributorsViewSet(ModelViewSet):
 class IssuesViewSet(ModelViewSet):
     serializer_class = IssuesListSerializer
     detail_serializer_class = IssuesDetailSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly, IsProjectContributor]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly,
+                          IsProjectContributor]
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
@@ -156,7 +162,8 @@ class IssuesViewSet(ModelViewSet):
 class CommentsViewSet(ModelViewSet):
     serializer_class = CommentsListSerializer
     detail_serializer_class = CommentsDetailSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly, IsProjectContributor]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly,
+                          IsProjectContributor]
 
     def get_queryset(self):
         issue_id = self.kwargs.get('issue_id')

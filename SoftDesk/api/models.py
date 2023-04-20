@@ -22,7 +22,9 @@ class Contributor(models.Model):
 
 
     def __str__(self):
-        return f"Projet n° : {self.project_id.id} - Contributeur : {self.user_id.get_full_name()} - Role : {self.get_role_display()}"
+        return f"Projet n° : {self.project_id.id} - " \
+               f"Contributeur : {self.user_id.get_full_name()} - " \
+               f"Role : {self.get_role_display()}"
 
 class Project(models.Model):
 
@@ -97,7 +99,8 @@ class Issue(models.Model):
                                 related_name='assigned_issues')
 
     def __str__(self):
-        return f"Projet n° : {self.project_id.id} - Titre du probléme : {self.title}"
+        return f"Projet n° : {self.project_id.id} - " \
+               f"Titre du probléme : {self.title}"
 
 class Comment(models.Model):
     description = models.CharField(max_length=255)
@@ -109,4 +112,6 @@ class Comment(models.Model):
     created_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Projet n° : {self.issue_id.project_id.id} - Titre du probléme : {self.issue_id.title} - Commentaire : {self.description}"
+        return f"Projet n° : {self.issue_id.project_id.id} - " \
+               f"Titre du probléme : {self.issue_id.title} - " \
+               f"Commentaire : {self.description}"

@@ -30,15 +30,24 @@ from rest_framework_simplejwt.views import (
 
 router = routers.DefaultRouter()
 router.register(r'projects', ProjectsViewSet, basename='projects')
-router.register(r'projects/(?P<project_id>[^/.]+)/users', ContributorsViewSet, basename='project-contributors')
-router.register(r'projects/(?P<project_id>[^/.]+)/issues', IssuesViewSet, basename='project-issues')
-router.register(r'projects/(?P<project_id>[^/.]+)/issues/(?P<issue_id>[^/.]+)/comments', CommentsViewSet, basename='issue-comments')
+router.register(r'projects/(?P<project_id>[^/.]+)/users',
+                ContributorsViewSet,
+                basename='project-contributors')
+router.register(r'projects/(?P<project_id>[^/.]+)/issues',
+                IssuesViewSet,
+                basename='project-issues')
+router.register(r'projects/(?P<project_id>[^/.]+)/'
+                r'issues/(?P<issue_id>[^/.]+)/comments',
+                CommentsViewSet,
+                basename='issue-comments')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
     path('api/signup/', UserCreate.as_view(), name='signup'),
-    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/login/', TokenObtainPairView.as_view(),
+         name='token_obtain_pair'),
+    path('api/login/refresh/', TokenRefreshView.as_view(),
+         name='token_refresh'),
     path('api/', include(router.urls)),
 ]
